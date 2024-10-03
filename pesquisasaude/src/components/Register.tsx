@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import * as Yup from 'yup';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom'; // Importar useNavigate
+import './Register.css' 
 
 const Register: React.FC = () => {
   const navigate = useNavigate(); // Iniciar useNavigate
