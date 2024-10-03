@@ -1,18 +1,25 @@
 // src/components/Register.tsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import * as Yup from 'yup';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
-import { useNavigate } from 'react-router-dom'; // Importar useNavigate
-import './Register.css' 
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import '../App.css';
 
 const Register: React.FC = () => {
-  const navigate = useNavigate(); // Iniciar useNavigate
+  const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
   const [location, setLocation] = useState<{ latitude: number | null; longitude: number | null }>({
     latitude: null,
     longitude: null,
   });
+
+  const [municipios, setMunicipios] = useState<string[]>([]);
+  const [bairros, setBairros] = useState<string[]>([]);
+  const [ruas, setRuas] = useState<string[]>([]);
+  const [selectedMunicipio, setSelectedMunicipio] = useState<string>('');
+  const [selectedBairro, setSelectedBairro] = useState<string>('');
 
   const initialValues = {
     firstName: '',
@@ -43,19 +50,69 @@ const Register: React.FC = () => {
     street: Yup.string().required('Por favor insira sua rua'),
     bairro: Yup.string().required('Por favor insira seu bairro'),
     city: Yup.string().required('Por favor insira sua cidade'),
-    /* password: Yup.string().required('Please enter your password'),
-    confirmPassword: Yup.string()
-      .required('Please confirm your password')
-      .oneOf([Yup.ref('password'), null], 'Passwords must match'), */
   });
+
+  useEffect(() => {
+    // Chame a API que retorna os municípios e configure o estado 'municipios'
+    const fetchMunicipios = async () => {
+      try {
+        const response = await axios.get('/api/municipios'); // Ajuste a URL da API conforme necessário
+        setMunicipios(response.data); // Supondo que a resposta seja uma lista de municípios
+      } catch (error) {
+        console.error('Erro ao buscar municípios:', error);
+      }
+    };
+    fetchMunicipios();
+  }, []);
+
+  const handleMunicipioChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const municipio = event.target.value;
+    setSelectedMunicipio(municipio);
+    
+    try {
+      const response = await axios.get(`/api/geographicAddress`, {
+        params: {
+          address: municipio
+        }
+      });
+      setBairros(response.data.bairros || []); // Ajuste o caminho conforme a estrutura da resposta
+      setSelectedBairro(''); // Limpar o bairro selecionado ao trocar o município
+      setRuas([]); // Limpa as ruas ao trocar o município
+    } catch (error) {
+      console.error('Erro ao buscar bairros:', error);
+    }
+  };
+
+  const handleBairroChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const bairro = event.target.value;
+    setSelectedBairro(bairro);
+    
+    try {
+      const response = await axios.get(`/api/geographicAddress`, {
+        params: {
+          address: bairro
+        }
+      });
+      setRuas(response.data.ruas || []); // Ajuste o caminho conforme a estrutura da resposta
+    } catch (error) {
+      console.error('Erro ao buscar ruas:', error);
+    }
+  };
 
   const handleSubmit = (values: typeof initialValues) => {
     console.log('Form values:', values);
     console.log('Collected location:', location);
-    setSubmitted(true);
     
-    // Redirecionar para a página de perguntas após o envio
-    navigate('/questions'); // Adiciona o redirecionamento aqui
+    const finalValues = {
+      ...values,
+      municipio: selectedMunicipio,
+      bairro: selectedBairro,
+    };
+    
+    console.log('Final values to submit:', finalValues);
+    
+    setSubmitted(true);
+    navigate('/questions');
   };
 
   const getLocation = () => {
@@ -140,84 +197,100 @@ const Register: React.FC = () => {
               <Field
                 name="nomeUnidade"
                 className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.street ? 'border-red-500' : 'border-gray-300'
+                  submitted && errors.nomeUnidade ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Ex. Hospital municipal "
+                placeholder="Ex. Hospital municipal"
               />
               <ErrorMessage name="nomeUnidade" component="div" className="text-red-500 text-sm mt-1" />
+              
+              <Field
+                name="city"
+                as="select"
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
+                  submitted && errors.city ? 'border-red-500' : 'border-gray-300'
+                }`}
+                onChange={handleMunicipioChange}
+              >
+                <option value="" label="Selecione o Município" />
+                {municipios.map((municipio) => (
+                  <option key={municipio} value={municipio}>
+                    {municipio}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage name="city" component="div" className="text-red-500 text-sm mt-1" />
+              
+              <Field
+                name="bairro"
+                as="select"
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
+                  submitted && errors.bairro ? 'border-red-500' : 'border-gray-300'
+                }`}
+                onChange={handleBairroChange}
+              >
+                <option value="" label="Selecione o Bairro" />
+                {bairros.map((bairro) => (
+                  <option key={bairro} value={bairro}>
+                    {bairro}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage name="bairro" component="div" className="text-red-500 text-sm mt-1" />
+              
               <Field
                 name="street"
+                as="select"
                 className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
                   submitted && errors.street ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Rua Dom Pedro I, 1822"
-              />
-              <ErrorMessage name="street" component="div" className="text-red-500 text-sm mt-1" />
-              <Field
-                name="bairro"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.city ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Bairro"
-              />
-              <ErrorMessage name="bairro" component="div" className="text-red-500 text-sm mt-1" />
-              <Field
-                name="city"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.city ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Cidade"
-              />
-              <ErrorMessage name="city" component="div" className="text-red-500 text-sm mt-1" />
-            </div>
-
-            <div className="mb-4">
-              <button
-                type="button"
-                onClick={getLocation}
-                className="w-full py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-200"
               >
-                Pegar Localização da Unidade de Saúde
-              </button>
-
-              {/* Mostrar a localização se estiver disponível */}
-              {location.latitude && location.longitude && (
-                <div className="mt-2 text-sm text-gray-600">
-                  <p>Latitude: {location.latitude}</p>
-                  <p>Longitude: {location.longitude}</p>
-                </div>
-              )}
+                <option value="" label="Selecione a Rua" />
+                {ruas.map((rua) => (
+                  <option key={rua} value={rua}>
+                    {rua}
+                  </option>
+                ))}
+              </Field>
+              <ErrorMessage name="street" component="div" className="text-red-500 text-sm mt-1" />
             </div>
 
-            {/* 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <label className="block text-sm font-medium text-gray-700">Senha</label>
               <Field
                 name="password"
                 type="password"
                 className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
                   submitted && errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Password"
+                placeholder="Senha"
               />
               <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Confirmar Senha</label>
               <Field
                 name="confirmPassword"
                 type="password"
                 className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
                   submitted && errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Confirm Password"
+                placeholder="Confirme sua senha"
               />
               <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
             </div>
-            */}
-
             <button
               type="submit"
-              className="w-full py-2 mt-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
+              onClick={getLocation}
+              className="w-full bg-blue-500 text-white font-semibold py-2 rounded-md hover:bg-blue-600"
             >
-              Entrar
+              Obter Localização
+            </button>
+            <button
+              type="submit"
+              className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
+            >
+              Cadastrar
             </button>
           </Form>
         )}
