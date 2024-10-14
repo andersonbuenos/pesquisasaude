@@ -6,6 +6,7 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../App.css';
+import { fetchLocalidades, Municipio } from '../services/localidadeService';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,11 @@ const Register: React.FC = () => {
     latitude: null,
     longitude: null,
   });
+
+  type Municipio = {
+    id: Number;
+    nome: string;
+  }
 
   const [municipios, setMunicipios] = useState<string[]>([]);
   const [bairros, setBairros] = useState<string[]>([]);
@@ -53,22 +59,22 @@ const Register: React.FC = () => {
   });
 
   useEffect(() => {
-    // Chame a API que retorna os municípios e configure o estado 'municipios'
-    const fetchMunicipios = async () => {
-      try {
-        const response = await axios.get('/api/municipios'); // Ajuste a URL da API conforme necessário
-        setMunicipios(response.data); // Supondo que a resposta seja uma lista de municípios
-      } catch (error) {
-        console.error('Erro ao buscar municípios:', error);
+    const loadMunicipios = async () => {
+      const data = await fetchLocalidades();
+      if (Array.isArray(data)) {
+        setMunicipios(data);
+      } else {
+        console.warn("Dados recebidos não são um array:", data);
+        setMunicipios([]); // Certifique-se de manter como array
       }
     };
-    fetchMunicipios();
+    loadMunicipios();
   }, []);
 
   const handleMunicipioChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const municipio = event.target.value;
     setSelectedMunicipio(municipio);
-    
+
     try {
       const response = await axios.get(`/api/geographicAddress`, {
         params: {
@@ -86,7 +92,7 @@ const Register: React.FC = () => {
   const handleBairroChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
     const bairro = event.target.value;
     setSelectedBairro(bairro);
-    
+
     try {
       const response = await axios.get(`/api/geographicAddress`, {
         params: {
@@ -102,15 +108,15 @@ const Register: React.FC = () => {
   const handleSubmit = (values: typeof initialValues) => {
     console.log('Form values:', values);
     console.log('Collected location:', location);
-    
+
     const finalValues = {
       ...values,
       municipio: selectedMunicipio,
       bairro: selectedBairro,
     };
-    
+
     console.log('Final values to submit:', finalValues);
-    
+
     setSubmitted(true);
     navigate('/questions');
   };
@@ -148,9 +154,8 @@ const Register: React.FC = () => {
                 <div>
                   <Field
                     name="firstName"
-                    className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                      submitted && errors.firstName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.firstName ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Primeiro Nome"
                   />
                   <ErrorMessage name="firstName" component="div" className="text-red-500 text-sm mt-1" />
@@ -158,9 +163,8 @@ const Register: React.FC = () => {
                 <div>
                   <Field
                     name="lastName"
-                    className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                      submitted && errors.lastName ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.lastName ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     placeholder="Último Nome"
                   />
                   <ErrorMessage name="lastName" component="div" className="text-red-500 text-sm mt-1" />
@@ -172,9 +176,8 @@ const Register: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">Email</label>
               <Field
                 name="email"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.email ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.email ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Email"
               />
               <ErrorMessage name="email" component="div" className="text-red-500 text-sm mt-1" />
@@ -184,9 +187,8 @@ const Register: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">Celular</label>
               <Field
                 name="phoneNumber"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="6799111-1111"
               />
               <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm mt-1" />
@@ -196,36 +198,33 @@ const Register: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700">Endereço da Unidade de Saúde</label>
               <Field
                 name="nomeUnidade"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.nomeUnidade ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.nomeUnidade ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Ex. Hospital municipal"
               />
               <ErrorMessage name="nomeUnidade" component="div" className="text-red-500 text-sm mt-1" />
-              
+
               <Field
                 name="city"
                 as="select"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.city ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.city ? 'border-red-500' : 'border-gray-300'}`}
                 onChange={handleMunicipioChange}
               >
                 <option value="" label="Selecione o Município" />
                 {municipios.map((municipio) => (
-                  <option key={municipio} value={municipio}>
-                    {municipio}
+                  <option key={municipio.id} value={municipio.nome}>
+                    {municipio.nome}
                   </option>
                 ))}
               </Field>
+
               <ErrorMessage name="city" component="div" className="text-red-500 text-sm mt-1" />
-              
+
               <Field
                 name="bairro"
                 as="select"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.bairro ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.bairro ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 onChange={handleBairroChange}
               >
                 <option value="" label="Selecione o Bairro" />
@@ -236,13 +235,12 @@ const Register: React.FC = () => {
                 ))}
               </Field>
               <ErrorMessage name="bairro" component="div" className="text-red-500 text-sm mt-1" />
-              
+
               <Field
                 name="street"
                 as="select"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.street ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.street ? 'border-red-500' : 'border-gray-300'
+                  }`}
               >
                 <option value="" label="Selecione a Rua" />
                 {ruas.map((rua) => (
@@ -259,9 +257,8 @@ const Register: React.FC = () => {
               <Field
                 name="password"
                 type="password"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.password ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.password ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Senha"
               />
               <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
@@ -272,9 +269,8 @@ const Register: React.FC = () => {
               <Field
                 name="confirmPassword"
                 type="password"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${
-                  submitted && errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Confirme sua senha"
               />
               <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
