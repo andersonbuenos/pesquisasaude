@@ -1,5 +1,3 @@
-// src/services/ibgeService.ts
-
 import axios from 'axios';
 
 export interface Municipio {

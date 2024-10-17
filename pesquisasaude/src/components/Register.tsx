@@ -19,9 +19,12 @@ const initialValues = {
   email: '',
   phoneNumber: '',
   nomeUnidade: '',
+  cep: '',
   street: '',
+  number: '',
   bairro: '',
   city: '',
+  state: '',
   password: '',
   confirmPassword: '',
 };
@@ -39,9 +42,14 @@ const validationSchema = Yup.object().shape({
     .required('Por favor insira seu número de telefone celular')
     .matches(/^\d{11}$/, 'O número de telefone deve ter 11 dígitos'),
   nomeUnidade: Yup.string().required('Por favor insira o nome da sua unidade'),
+  cep: Yup.string()
+    .required('Por favor insira o CEP')
+    .matches(/^\d{5}-\d{3}$/, 'Formato de CEP inválido'),
   street: Yup.string().required('Por favor insira sua rua'),
+  number: Yup.string().required('Por favor insira o número'),
   bairro: Yup.string().required('Por favor insira seu bairro'),
   city: Yup.string().required('Por favor insira sua cidade'),
+  state: Yup.string().required('Por favor insira seu estado'),
 });
 
 const Register: React.FC = () => {
@@ -53,70 +61,42 @@ const Register: React.FC = () => {
   });
 
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
-  const [bairros, setBairros] = useState<string[]>([]);
-  const [ruas, setRuas] = useState<string[]>([]);
-  const [selectedMunicipio, setSelectedMunicipio] = useState<string>('');
-  const [selectedBairro, setSelectedBairro] = useState<string>('');
 
   useEffect(() => {
     const loadMunicipios = async () => {
       const data = await fetchLocalidades();
-      if (Array.isArray(data)) {
-        setMunicipios(data);
-      } else {
-        console.warn("Dados recebidos não são um array:", data);
-        setMunicipios([]); // Certifique-se de manter como array
-      }
+      setMunicipios(Array.isArray(data) ? data : []);
     };
     loadMunicipios();
   }, []);
 
-  const handleMunicipioChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const municipio = event.target.value;
-    setSelectedMunicipio(municipio);
+  const handleCepChange = async (event: React.ChangeEvent<HTMLInputElement>, setFieldValue: any) => {
+    const cep = event.target.value;
+    setFieldValue('cep', cep);
 
-    try {
-      const response = await axios.get(`/api/geographicAddress`, {
-        params: {
-          address: municipio
+    if (cep.length === 9) {
+      try {
+        const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = response.data;
+
+        if (data.erro) {
+          alert('CEP não encontrado');
+        } else {
+          setFieldValue('street', data.logradouro);
+          setFieldValue('bairro', data.bairro);
+          setFieldValue('city', data.localidade);
+          setFieldValue('state', data.uf);
         }
-      });
-      setBairros(response.data.bairros || []); // Ajuste o caminho conforme a estrutura da resposta
-      setSelectedBairro(''); // Limpar o bairro selecionado ao trocar o município
-      setRuas([]); // Limpa as ruas ao trocar o município
-    } catch (error) {
-      console.error('Erro ao buscar bairros:', error);
-    }
-  };
-
-  const handleBairroChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const bairro = event.target.value;
-    setSelectedBairro(bairro);
-
-    try {
-      const response = await axios.get(`/api/geographicAddress`, {
-        params: {
-          address: bairro
-        }
-      });
-      setRuas(response.data.ruas || []); // Ajuste o caminho conforme a estrutura da resposta
-    } catch (error) {
-      console.error('Erro ao buscar ruas:', error);
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+        alert('Erro ao buscar CEP');
+      }
     }
   };
 
   const handleSubmit = (values: typeof initialValues) => {
-    console.log('Form values:', values);
-    console.log('Collected location:', location);
-
-    const finalValues = {
-      ...values,
-      municipio: selectedMunicipio,
-      bairro: selectedBairro,
-    };
-
-    console.log('Final values to submit:', finalValues);
-
+    console.log('Final values to submit:', values);
+    console.log('Localização do usuário:', location);
     setSubmitted(true);
     navigate('/questions');
   };
@@ -127,14 +107,14 @@ const Register: React.FC = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           setLocation({ latitude, longitude });
-          console.log('Latitude:', latitude, 'Longitude:', longitude);
+          console.log('Localização obtida:', position.coords);
         },
         (error) => {
-          console.error('Error getting location:', error);
+          console.error('Erro ao obter localização:', error);
         }
       );
     } else {
-      console.error('Geolocation is not supported by this browser.');
+      console.error('Geolocation não é suportado por este navegador.');
     }
   };
 
@@ -146,7 +126,7 @@ const Register: React.FC = () => {
         validationSchema={validationSchema}
         onSubmit={handleSubmit}
       >
-        {({ errors, touched }) => (
+        {({ errors, touched, setFieldValue }) => (
           <Form>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Nome</label>
@@ -193,76 +173,72 @@ const Register: React.FC = () => {
               />
               <ErrorMessage name="phoneNumber" component="div" className="text-red-500 text-sm mt-1" />
             </div>
-
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">Endereço da Unidade de Saúde</label>
+              <label className="block text-sm font-medium text-gray-700">CEP</label>
               <Field
-                name="nomeUnidade"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.nomeUnidade ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                placeholder="Ex. Hospital municipal"
+                name="cep"
+                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.cep ? 'border-red-500' : 'border-gray-300'}`}
+                placeholder="00000-000"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCepChange(e, setFieldValue)}
               />
-              <ErrorMessage name="nomeUnidade" component="div" className="text-red-500 text-sm mt-1" />
+              <ErrorMessage name="cep" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
 
-              <Field
-                name="city"
-                as="select"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.city ? 'border-red-500' : 'border-gray-300'}`}
-                onChange={handleMunicipioChange}
-              >
-                <option value="" label="Selecione o Município" />
-                {municipios.map((municipio) => (
-                  <option key={municipio.id} value={municipio.nome}>
-                    {municipio.nome}
-                  </option>
-                ))}
-              </Field>
-
-              <ErrorMessage name="city" component="div" className="text-red-500 text-sm mt-1" />
-
-              <Field
-                name="bairro"
-                as="select"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.bairro ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                onChange={handleBairroChange}
-              >
-                <option value="" label="Selecione o Bairro" />
-                {bairros.map((bairro) => (
-                  <option key={bairro} value={bairro}>
-                    {bairro}
-                  </option>
-                ))}
-              </Field>
-              <ErrorMessage name="bairro" component="div" className="text-red-500 text-sm mt-1" />
-
+            {/* Campos de endereço preenchidos automaticamente */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Rua</label>
               <Field
                 name="street"
-                as="select"
                 className="mt-1 block w-full p-2 border rounded-md shadow-sm border-gray-300"
-              >
-                <option value="" label="Selecione a Rua" />
-                {ruas.map((rua) => (
-                  <option key={rua} value={rua}>
-                    {rua}
-                  </option>
-                ))}
-              </Field>
+                placeholder="Rua"
+              />
               <ErrorMessage name="street" component="div" className="text-red-500 text-sm mt-1" />
             </div>
 
-            <div className="flex items-center mt-5">
-              <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
-                Cadastrar
-              </button>
-              <button
-                type="button"
-                className="bg-gray-300 text-gray-700 py-2 px-4 rounded ml-4"
-                onClick={getLocation}
-              >
-                Obter localização
-              </button>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Número</label>
+              <Field
+                name="number"
+                className="mt-1 block w-full p-2 border rounded-md shadow-sm border-gray-300"
+                placeholder="Número"
+              />
+              <ErrorMessage name="number" component="div" className="text-red-500 text-sm mt-1" />
             </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Bairro</label>
+              <Field
+                name="bairro"
+                className="mt-1 block w-full p-2 border rounded-md shadow-sm border-gray-300"
+                placeholder="Bairro"
+              />
+              <ErrorMessage name="bairro" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Cidade</label>
+              <Field
+                name="city"
+                className="mt-1 block w-full p-2 border rounded-md shadow-sm border-gray-300"
+                placeholder="Cidade"
+              />
+              <ErrorMessage name="city" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Estado</label>
+              <Field
+                name="state"
+                className="mt-1 block w-full p-2 border rounded-md shadow-sm border-gray-300"
+                placeholder="Estado"
+              />
+              <ErrorMessage name="state" component="div" className="text-red-500 text-sm mt-1" />
+            </div>
+
+            <button type="submit" className="px-6 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
+              Enviar
+            </button>
           </Form>
         )}
       </Formik>
