@@ -6,7 +6,43 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../App.css';
-import { fetchLocalidades, Municipio } from '../services/localidadeService';
+import { fetchLocalidades } from '../services/localidadeService';
+
+interface Municipio {
+  id: number;
+  nome: string;
+}
+
+const initialValues = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  phoneNumber: '',
+  nomeUnidade: '',
+  street: '',
+  bairro: '',
+  city: '',
+  password: '',
+  confirmPassword: '',
+};
+
+const validationSchema = Yup.object().shape({
+  firstName: Yup.string()
+    .required('Por favor entre com o seu primeiro nome')
+    .min(2, 'O nome deve ter pelo menos 2 caracteres')
+    .matches(/^[a-zA-Z]+$/, 'Não são permitidos caracteres especiais'),
+  lastName: Yup.string().required('Por favor entre com seu último nome'),
+  email: Yup.string()
+    .required('Por favor entre com seu email')
+    .email('Formato inválido'),
+  phoneNumber: Yup.string()
+    .required('Por favor insira seu número de telefone celular')
+    .matches(/^\d{11}$/, 'O número de telefone deve ter 11 dígitos'),
+  nomeUnidade: Yup.string().required('Por favor insira o nome da sua unidade'),
+  street: Yup.string().required('Por favor insira sua rua'),
+  bairro: Yup.string().required('Por favor insira seu bairro'),
+  city: Yup.string().required('Por favor insira sua cidade'),
+});
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -16,47 +52,11 @@ const Register: React.FC = () => {
     longitude: null,
   });
 
-  type Municipio = {
-    id: Number;
-    nome: string;
-  }
-
-  const [municipios, setMunicipios] = useState<string[]>([]);
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [bairros, setBairros] = useState<string[]>([]);
   const [ruas, setRuas] = useState<string[]>([]);
   const [selectedMunicipio, setSelectedMunicipio] = useState<string>('');
   const [selectedBairro, setSelectedBairro] = useState<string>('');
-
-  const initialValues = {
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    nomeUnidade: '',
-    street: '',
-    bairro: '',
-    city: '',
-    password: '',
-    confirmPassword: '',
-  };
-
-  const validationSchema = Yup.object().shape({
-    firstName: Yup.string()
-      .required('Por favor entre com o seu primeiro nome')
-      .min(2, 'O nome deve ter pelo menos 2 caracteres')
-      .matches(/^[a-zA-Z]+$/, 'Não são permitidos caracteres especiais'),
-    lastName: Yup.string().required('Por favor entre com seu último nome'),
-    email: Yup.string()
-      .required('Por favor entre com seu email')
-      .email('Formato inválido'),
-    phoneNumber: Yup.string()
-      .required('Por favor insira seu número de telefone celular')
-      .matches(/^\d{11}$/, 'O número de telefone deve ter 11 dígitos'),
-    nomeUnidade: Yup.string().required('Por favor insira o nome da sua unidade'),
-    street: Yup.string().required('Por favor insira sua rua'),
-    bairro: Yup.string().required('Por favor insira seu bairro'),
-    city: Yup.string().required('Por favor insira sua cidade'),
-  });
 
   useEffect(() => {
     const loadMunicipios = async () => {
@@ -239,8 +239,7 @@ const Register: React.FC = () => {
               <Field
                 name="street"
                 as="select"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.street ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                className="mt-1 block w-full p-2 border rounded-md shadow-sm border-gray-300"
               >
                 <option value="" label="Selecione a Rua" />
                 {ruas.map((rua) => (
@@ -252,42 +251,18 @@ const Register: React.FC = () => {
               <ErrorMessage name="street" component="div" className="text-red-500 text-sm mt-1" />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Senha</label>
-              <Field
-                name="password"
-                type="password"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.password ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                placeholder="Senha"
-              />
-              <ErrorMessage name="password" component="div" className="text-red-500 text-sm mt-1" />
+            <div className="flex items-center mt-5">
+              <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">
+                Cadastrar
+              </button>
+              <button
+                type="button"
+                className="bg-gray-300 text-gray-700 py-2 px-4 rounded ml-4"
+                onClick={getLocation}
+              >
+                Obter localização
+              </button>
             </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">Confirmar Senha</label>
-              <Field
-                name="confirmPassword"
-                type="password"
-                className={`mt-1 block w-full p-2 border rounded-md shadow-sm ${submitted && errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                placeholder="Confirme sua senha"
-              />
-              <ErrorMessage name="confirmPassword" component="div" className="text-red-500 text-sm mt-1" />
-            </div>
-            <button
-              type="submit"
-              onClick={getLocation}
-              className="w-full bg-blue-500 text-white font-semibold py-2 rounded-md hover:bg-blue-600"
-            >
-              Obter Localização
-            </button>
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200"
-            >
-              Cadastrar
-            </button>
           </Form>
         )}
       </Formik>
