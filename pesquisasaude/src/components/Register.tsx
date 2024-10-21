@@ -235,9 +235,23 @@ const Register: React.FC = () => {
               />
               <ErrorMessage name="state" component="div" className="text-red-500 text-sm mt-1" />
             </div>
+            <div className="mb-4">
+              <button
+                type="button"
+                className="bg-cyan-900 text-white p-2 rounded-md"
+                onClick={getLocation}
+              >
+                Obter Localização Atual
+              </button>
+              {location.latitude && location.longitude && (
+                <div className="text-sm text-gray-700 mt-2">
+                  Localização: Latitude {location.latitude}, Longitude {location.longitude}
+                </div>
+              )}
+            </div>
 
-            <button type="submit" className="px-6 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600">
-              Enviar
+            <button type="submit" className="px-6 py-2 text-white bg-cyan-900 rounded-lg hover:bg-stone-500">
+              Cadastrar
             </button>
           </Form>
         )}

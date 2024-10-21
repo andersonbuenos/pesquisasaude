@@ -111,25 +111,22 @@ const Questions = () => {
     { question: "Nome do substituto do RT:", type: "text", key: "substitutoRT.nome" },
     { question: "Telefone do substituto do RT:", type: "text", key: "substitutoRT.telefone" },
     { question: "E-mail do substituto do RT:", type: "text", key: "substitutoRT.email" },
-    // Outras perguntas...
   ];
 
   const handleNextQuestion = () => {
-    const currentKey = questions[currentQuestionIndex].key as keyof FormData; // Asserção de tipo
-  
-    // Verifique se o formData contém a chave e se o valor não está vazio
+    const currentKey = questions[currentQuestionIndex].key as keyof FormData;
+
     if (formData[currentKey] !== undefined && formData[currentKey] !== '') {
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     }
   };
-  
+
 
   const handleSkipQuestion = () => {
     setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
   };
 
   const handleOptionChange = (key: string, value: string) => {
-    // Atualiza o estado do formData ao selecionar uma opção
     setFormData((prevData) => ({
       ...prevData,
       [key]: value,
@@ -137,7 +134,6 @@ const Questions = () => {
   };
 
   const handleTextChange = (key: string, value: string) => {
-    // Atualiza o estado do formData ao digitar um texto
     setFormData((prevData) => ({
       ...prevData,
       [key]: value,
@@ -151,12 +147,12 @@ const Questions = () => {
       onChange={(e) => onChange(e.target.value)}
     />
   );
-  
-  // Uso no JSX
-  type FormDataKeys = keyof FormData; // Define as chaves do FormData
 
-  const currentKey: FormDataKeys = questions[currentQuestionIndex].key as FormDataKeys; // Assegura que currentKey é um FormDataKey
-  const value = formData[currentKey] as string; 
+
+  type FormDataKeys = keyof FormData;
+
+  const currentKey: FormDataKeys = questions[currentQuestionIndex].key as FormDataKeys;
+  const value = formData[currentKey] as string;
 
   return (
     <div className="questions-container">
@@ -172,6 +168,7 @@ const Questions = () => {
                     name={questions[currentQuestionIndex].key}
                     value={option}
                     onChange={() => handleOptionChange(questions[currentQuestionIndex].key, option)}
+                    style={{ margin: '5px' }}
                   />
                   {option}
                 </label>
@@ -179,11 +176,10 @@ const Questions = () => {
             </div>
           ) : (
             <input
-            type="text"
-            className="text-input" // Classe CSS adicionada para estilização
-            value={value} // Use o valor do formData
-            onChange={(e) => handleTextChange(currentKey, e.target.value)} // Atualize com o valor do formData
-          />
+              type="text"
+              className="text-input"
+              onChange={(e) => handleTextChange(currentKey, e.target.value)}
+            />
           )}
           <div className="navigation-buttons">
             <button onClick={handleSkipQuestion}></button>
