@@ -94,11 +94,36 @@ const Register: React.FC = () => {
     }
   };
 
-  const handleSubmit = (values: typeof initialValues) => {
-    console.log('Final values to submit:', values);
-    console.log('Localização do usuário:', location);
-    setSubmitted(true);
-    navigate('/questions');
+  // Register.tsx
+  const handleRegister = async (values: typeof initialValues) => {
+    try {
+      const response = await axios.post('http://localhost:3000/register', values);
+      if (response.status === 201) {
+        navigate('/questions');
+      }
+    } catch (error) {
+      console.error("Erro ao registrar o usuário:", error);
+    }
+  };
+
+
+  const handleSubmit = async (values: typeof initialValues) => {
+    try {
+      console.log('Enviando valores:', values);
+
+      // Enviar os dados para o backend
+      const response = await axios.post('http://localhost:3000/register', values);
+
+      if (response.status === 201) {
+        setSubmitted(true);  // Marca como enviado
+        navigate('/questions');  // Redireciona para a página "questions" após o sucesso
+      } else {
+        alert('Ocorreu um erro ao cadastrar. Por favor, tente novamente.');
+      }
+    } catch (error) {
+      console.error('Erro ao enviar dados para o backend:', error);
+      alert('Ocorreu um erro ao cadastrar. Por favor, tente novamente.');
+    }
   };
 
   const getLocation = () => {
@@ -117,6 +142,7 @@ const Register: React.FC = () => {
       console.error('Geolocation não é suportado por este navegador.');
     }
   };
+
 
   return (
     <div className="container mx-auto p-6 bg-white rounded-lg shadow-md mt-10">
@@ -250,7 +276,10 @@ const Register: React.FC = () => {
               )}
             </div>
 
-            <button type="submit" className="px-6 py-2 text-white bg-cyan-900 rounded-lg hover:bg-stone-500">
+            <button
+              type="submit"
+              className="px-6 py-2 text-white bg-cyan-900 rounded-lg hover:bg-stone-500"
+            >
               Cadastrar
             </button>
           </Form>

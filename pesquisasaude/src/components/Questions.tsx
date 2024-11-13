@@ -33,6 +33,7 @@ interface FormData {
     telefone: string;
     email: string;
   };
+  fotoCapturada: boolean;
 }
 
 const Questions = () => {
@@ -78,6 +79,7 @@ const Questions = () => {
       telefone: "",
       email: "",
     },
+    fotoCapturada: false,
   });
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -95,15 +97,18 @@ const Questions = () => {
     { question: "A unidade possui rede de frio municipal?", options: ["Sim", "Não"], key: "redeFrioMunicipal", isRequired: true },
     { question: "Qual o tipo de soros disponíveis?", options: ["Anti-botrópico", "Anti-crotálico", "Anti-elapídico", "Anti-laquético"], key: "tipoSoros", isRequired: true },
     { question: "Como é feito o armazenamento?", options: ["Adequado", "Inadequado"], key: "armazenamento", isRequired: true },
+    { question: "Por favor, tire uma foto para continuar:", type: "photo", key: "fotoCapturada", isRequired: true },
     { question: "Manutenção da estrutura é feita regularmente?", options: ["Sim", "Não"], key: "manutencaoEstrutura", isRequired: true },
     { question: "Comentários sobre a manutenção da estrutura:", type: "text", key: "comentariosManutencao" },
     { question: "Equipamentos de conservação estão em boas condições?", options: ["Sim", "Não"], key: "equipamentoConservacao", isRequired: true },
+    { question: "Por favor, tire uma foto para continuar:", type: "photo", key: "fotoCapturada", isRequired: true },
     { question: "Como é feito o armazenamento da conservação?", options: ["Adequado", "Inadequado"], key: "armazenamentoConservacao", isRequired: true },
     { question: "Comentários sobre a conservação:", type: "text", key: "comentariosConservacao" },
     { question: "Controle de estoque é feito regularmente?", options: ["Sim", "Não"], key: "controleEstoque", isRequired: true },
     { question: "Como a unidade lida com intercorrências?", options: ["Protocolo definido", "Não há protocolo"], key: "intercorrencia", isRequired: true },
     { question: "Registros e notificações são realizados corretamente?", options: ["Sim", "Não"], key: "registrosNotificacoes", isRequired: true },
     { question: "O transporte da vacina está adequado?", options: ["Sim", "Não"], key: "transporte", isRequired: true },
+    { question: "Por favor, tire uma foto para continuar:", type: "photo", key: "fotoCapturada", isRequired: true },
     { question: "A equipe foi capacitada para a conservação da vacina?", options: ["Sim", "Não"], key: "capacitacaoEquipe", isRequired: true },
     { question: "O PGRSS está implementado na unidade?", options: ["Sim", "Não"], key: "pgrss", isRequired: true },
     { question: "A unidade possui licença sanitária?", options: ["Sim", "Não"], key: "licencaSanitaria", isRequired: true },
@@ -116,14 +121,23 @@ const Questions = () => {
   const handleNextQuestion = () => {
     const currentKey = questions[currentQuestionIndex].key as keyof FormData;
 
+    // Verifica se a foto foi capturada antes de avançar
+    if (currentKey === "fotoCapturada" && !formData.fotoCapturada) {
+      alert("Por favor, tire uma foto antes de continuar.");
+      return;
+    }
+
     if (formData[currentKey] !== undefined && formData[currentKey] !== '') {
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
     }
   };
 
-
-  const handleSkipQuestion = () => {
-    setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+  const handleCapturePhoto = () => {
+    setFormData((prevData) => ({
+      ...prevData,
+      fotoCapturada: true, // Atualiza o estado para indicar que a foto foi capturada
+    }));
+    alert("Foto capturada com sucesso!");
   };
 
   const handleOptionChange = (key: string, value: string) => {
@@ -140,18 +154,7 @@ const Questions = () => {
     }));
   };
 
-  const TextInput = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
-
-
-  type FormDataKeys = keyof FormData;
-
-  const currentKey: FormDataKeys = questions[currentQuestionIndex].key as FormDataKeys;
+  const currentKey = questions[currentQuestionIndex].key as keyof FormData;
   const value = formData[currentKey] as string;
 
   return (
@@ -159,40 +162,70 @@ const Questions = () => {
       {currentQuestionIndex < questions.length ? (
         <div className="question-card">
           <h3 className="question-title">{questions[currentQuestionIndex]?.question}</h3>
-          {questions[currentQuestionIndex].options ? (
+
+          {questions[currentQuestionIndex].key === "tipoSoros" ? (
             <div>
-              {questions[currentQuestionIndex].options.map((option) => (
-                <label class="option-label" key={option}>
+              {Object.keys(formData.tipoSoros).map((tipo) => (
+                <div key={tipo} className="soro-item">
+                  <label className="option-label" htmlFor={tipo}>
+                    {tipo}
+                  </label>
                   <input
-                    type="radio"
-                    name={questions[currentQuestionIndex].key}
-                    value={option}
-                    onChange={() => handleOptionChange(questions[currentQuestionIndex].key, option)}
-                    style={{ margin: '5px' }}
+                    type="number"
+                    id={tipo}
+                    name={tipo}
+                    value={formData.tipoSoros[tipo]}
+                    min="0"
+                    onChange={(e) =>
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        tipoSoros: {
+                          ...prevData.tipoSoros,
+                          [tipo]: e.target.value,
+                        },
+                      }))
+                    }
+                    className="soro-input"
+                    style={{ marginLeft: '10px' }}
                   />
-                  {option}
-                </label>
+                </div>
               ))}
             </div>
-          ) : (
-            <input
-              type="text"
-              className="text-input"
+          ) : questions[currentQuestionIndex].type === "photo" ? (
+            <button onClick={handleCapturePhoto} className="capture-button">
+              Capturar Foto
+            </button>
+          ) : questions[currentQuestionIndex].type === "text" ? (
+            <textarea
+              value={value || ""}
               onChange={(e) => handleTextChange(currentKey, e.target.value)}
+              className="input-text"
             />
+          ) : (
+            questions[currentQuestionIndex].options?.map((option) => (
+              <label key={option}>
+                <input
+                  type="radio"
+                  name={currentKey}
+                  value={option}
+                  checked={value === option}
+                  onChange={(e) => handleOptionChange(currentKey, e.target.value)}
+                />
+                {option}
+              </label>
+            ))
           )}
-          <div className="navigation-buttons">
-            <button onClick={handleSkipQuestion}></button>
-            <button class="skip-button" onClick={handleNextQuestion}>Próximo</button>
-          </div>
+
+          <button onClick={handleNextQuestion} className="next-button">
+            Próxima
+          </button>
         </div>
       ) : (
-        <div className="end-message">
-          <h3>Obrigado por responder!</h3>
-        </div>
+        <div className="completion-message">Obrigado por responder o questionário!</div>
       )}
     </div>
   );
+
 };
 
 export default Questions;

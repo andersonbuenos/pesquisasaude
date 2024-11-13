@@ -101,3 +101,26 @@ button {
   font-size: 1.5rem;
   color: #333;
 }
+
+.soro-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px;
+  margin-bottom: 5px;
+  margin-left: 60px;
+}
+
+/* .option-label {
+  display: flex;
+  justify-content: space-between;
+} */
+
+.soro-input {
+  display: flex;
+  border: #0e5951 solid 0.2rem;
+  margin: 0 10%;
+}
+
+.h3 {
+  color: #127369;
+}
