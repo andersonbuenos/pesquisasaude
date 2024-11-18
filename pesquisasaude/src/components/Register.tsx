@@ -1,5 +1,3 @@
-// src/components/Register.tsx
-
 import React, { useState, useEffect } from 'react';
 import * as Yup from 'yup';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
@@ -94,29 +92,16 @@ const Register: React.FC = () => {
     }
   };
 
-  // Register.tsx
-  const handleRegister = async (values: typeof initialValues) => {
-    try {
-      const response = await axios.post('http://localhost:3000/register', values);
-      if (response.status === 201) {
-        navigate('/questions');
-      }
-    } catch (error) {
-      console.error("Erro ao registrar o usuário:", error);
-    }
-  };
-
-
   const handleSubmit = async (values: typeof initialValues) => {
     try {
       console.log('Enviando valores:', values);
 
-      // Enviar os dados para o backend
       const response = await axios.post('http://localhost:3000/register', values);
 
       if (response.status === 201) {
-        setSubmitted(true);  // Marca como enviado
-        navigate('/questions');  // Redireciona para a página "questions" após o sucesso
+        console.log('Cadastro realizado com sucesso');
+        setSubmitted(true);
+        navigate('/questions');
       } else {
         alert('Ocorreu um erro ao cadastrar. Por favor, tente novamente.');
       }
